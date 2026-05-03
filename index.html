@@ -6,301 +6,70 @@
 <title>AI Security System</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
-
   :root {
-    --red: #ff2020;
-    --red-dim: #ff202044;
-    --green: #00ff88;
-    --green-dim: #00ff8822;
-    --yellow: #ffcc00;
-    --bg: #050a0f;
-    --panel: #0a1520;
-    --border: #1a3a5a;
-    --text: #a0c8e0;
-    --text-bright: #e0f4ff;
+    --red: #ff2020; --red-dim: #ff202044;
+    --green: #00ff88; --green-dim: #00ff8822;
+    --yellow: #ffcc00; --bg: #050a0f;
+    --panel: #0a1520; --border: #1a3a5a;
+    --text: #a0c8e0; --text-bright: #e0f4ff;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    min-height: 100vh;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .app {
-    position: relative;
-    z-index: 1;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 12px;
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--red);
-    margin-bottom: 16px;
-  }
-
-  .logo {
-    width: 40px; height: 40px;
-    border: 2px solid var(--red);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-
-  header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-bright);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  header h1 span { color: var(--red); }
-
-  .status-pill {
-    margin-left: auto;
-    padding: 4px 14px;
-    border-radius: 20px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
-
-  .idle { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
-  .scanning { background: rgba(255,204,0,0.15); color: var(--yellow); border: 1px solid var(--yellow); animation: blink 1s infinite; }
-  .alert { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); animation: blink 0.5s infinite; }
-
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Rajdhani',sans-serif; min-height:100vh; }
+  body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+  .app { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:12px; }
+  header { display:flex; align-items:center; gap:12px; padding:14px 20px; background:var(--panel); border:1px solid var(--border); border-top:3px solid var(--red); margin-bottom:16px; }
+  .logo { width:40px; height:40px; border:2px solid var(--red); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; animation:pulse-border 2s infinite; }
+  @keyframes pulse-border { 0%,100%{box-shadow:0 0 0 0 rgba(255,32,32,0.4)} 50%{box-shadow:0 0 0 8px rgba(255,32,32,0)} }
+  header h1 { font-size:20px; font-weight:700; color:var(--text-bright); letter-spacing:2px; text-transform:uppercase; }
+  header h1 span { color:var(--red); }
+  .status-pill { margin-left:auto; padding:4px 14px; border-radius:20px; font-family:'Share Tech Mono',monospace; font-size:12px; font-weight:600; letter-spacing:1px; }
+  .idle { background:var(--green-dim); color:var(--green); border:1px solid var(--green); }
+  .scanning { background:rgba(255,204,0,0.15); color:var(--yellow); border:1px solid var(--yellow); animation:blink 1s infinite; }
+  .alert { background:var(--red-dim); color:var(--red); border:1px solid var(--red); animation:blink 0.5s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    margin-bottom: 14px;
-    overflow: hidden;
-  }
-
-  .panel-header {
-    padding: 8px 14px;
-    background: rgba(26,58,90,0.5);
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    font-family: 'Share Tech Mono', monospace;
-    color: var(--green);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .panel-body { padding: 14px; }
-
-  .camera-wrap {
-    position: relative;
-    background: #000;
-    width: 100%;
-    aspect-ratio: 4/3;
-    overflow: hidden;
-  }
-
-  #video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  #canvas { display: none; }
-
-  .cam-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: var(--border);
-    font-size: 13px;
-    font-family: 'Share Tech Mono', monospace;
-  }
-
-  .cam-placeholder .icon { font-size: 48px; }
-
-  .scan-line {
-    position: absolute;
-    left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--green), transparent);
-    top: 0;
-    opacity: 0;
-  }
-  .scan-line.active {
-    opacity: 1;
-    animation: scan 3s linear infinite;
-  }
+  .panel { background:var(--panel); border:1px solid var(--border); margin-bottom:14px; overflow:hidden; }
+  .panel-header { padding:8px 14px; background:rgba(26,58,90,0.5); border-bottom:1px solid var(--border); font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--green); letter-spacing:2px; text-transform:uppercase; }
+  .panel-body { padding:14px; }
+  .camera-wrap { position:relative; background:#000; width:100%; aspect-ratio:4/3; overflow:hidden; }
+  #video { width:100%; height:100%; object-fit:cover; display:block; }
+  #canvas { display:none; }
+  .cam-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--border); font-size:13px; font-family:'Share Tech Mono',monospace; }
+  .cam-placeholder .icon { font-size:48px; }
+  .scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--green),transparent); top:0; opacity:0; }
+  .scan-line.active { opacity:1; animation:scan 3s linear infinite; }
   @keyframes scan { 0%{top:0%} 100%{top:100%} }
-
-  .alert-flash {
-    position: absolute;
-    inset: 0;
-    border: 3px solid var(--red);
-    pointer-events: none;
-    opacity: 0;
-  }
-  .alert-flash.active { animation: flash 0.5s 3; }
-  @keyframes flash { 0%,100%{opacity:0} 50%{opacity:1; background:rgba(255,32,32,0.15)} }
-
-  .btn {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    cursor: pointer;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    transition: all 0.2s;
-    margin-top: 10px;
-    border-radius: 4px;
-  }
-
-  .btn-start { background: var(--green); color: #050a0f; }
-  .btn-start:hover { background: #00ffaa; }
-  .btn-stop { background: var(--red); color: #fff; }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(26,58,90,0.5);
-    font-size: 13px;
-  }
-  .info-row:last-child { border-bottom: none; }
-  .info-label { color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1px; }
-  .info-value { color: var(--text-bright); font-weight: 600; font-size: 12px; text-align: right; max-width: 65%; word-break: break-all; }
-
-  .threats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .threat-item {
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.3s;
-    color: var(--text);
-  }
-
-  .threat-item.detected {
-    border-color: var(--red);
-    background: var(--red-dim);
-    color: var(--red);
-  }
-
-  .threat-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--border);
-    flex-shrink: 0;
-  }
-
-  .threat-item.detected .threat-dot {
-    background: var(--red);
-    animation: blink 0.5s infinite;
-  }
-
-  .log-area {
-    height: 150px;
-    overflow-y: auto;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    line-height: 1.8;
-  }
-
-  .log-entry { padding-left: 8px; border-left: 2px solid transparent; margin-bottom: 2px; }
-  .log-entry.ok { border-color: var(--green); color: var(--green); }
-  .log-entry.warn { border-color: var(--yellow); color: var(--yellow); }
-  .log-entry.danger { border-color: var(--red); color: var(--red); }
-  .log-entry.info { border-color: var(--border); color: var(--text); }
-
-  .input-field {
-    width: 100%;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid var(--border);
-    color: var(--text-bright);
-    padding: 12px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 14px;
-    outline: none;
-    border-radius: 4px;
-    margin-bottom: 8px;
-  }
-  .input-field:focus { border-color: var(--green); }
-  .input-field::placeholder { color: var(--border); }
-
-  .alert-banner {
-    display: none;
-    padding: 12px;
-    background: var(--red-dim);
-    border: 1px solid var(--red);
-    color: var(--red);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-    text-align: center;
-    margin-bottom: 14px;
-    animation: blink 0.5s infinite;
-  }
-  .alert-banner.show { display: block; }
-
-  .error-box {
-    display: none;
-    padding: 12px;
-    background: rgba(255,204,0,0.1);
-    border: 1px solid var(--yellow);
-    color: var(--yellow);
-    font-size: 13px;
-    margin-top: 10px;
-    border-radius: 4px;
-    line-height: 1.6;
-  }
-  .error-box.show { display: block; }
+  .alert-flash { position:absolute; inset:0; border:3px solid var(--red); pointer-events:none; opacity:0; }
+  .alert-flash.active { animation:flash 0.5s 3; }
+  @keyframes flash { 0%,100%{opacity:0} 50%{opacity:1;background:rgba(255,32,32,0.15)} }
+  .btn { width:100%; padding:14px; border:none; cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; transition:all 0.2s; margin-top:10px; border-radius:4px; }
+  .btn-start { background:var(--green); color:#050a0f; }
+  .btn-stop { background:var(--red); color:#fff; }
+  .info-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(26,58,90,0.5); font-size:13px; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { color:var(--text); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:1px; }
+  .info-value { color:var(--text-bright); font-weight:600; font-size:12px; text-align:right; max-width:65%; word-break:break-all; }
+  .threats { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .threat-item { padding:10px; border:1px solid var(--border); border-radius:4px; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; transition:all 0.3s; color:var(--text); }
+  .threat-item.detected { border-color:var(--red); background:var(--red-dim); color:var(--red); }
+  .threat-dot { width:8px; height:8px; border-radius:50%; background:var(--border); flex-shrink:0; }
+  .threat-item.detected .threat-dot { background:var(--red); animation:blink 0.5s infinite; }
+  .log-area { height:160px; overflow-y:auto; font-family:'Share Tech Mono',monospace; font-size:11px; line-height:1.8; }
+  .log-entry { padding-left:8px; border-left:2px solid transparent; margin-bottom:2px; }
+  .log-entry.ok { border-color:var(--green); color:var(--green); }
+  .log-entry.warn { border-color:var(--yellow); color:var(--yellow); }
+  .log-entry.danger { border-color:var(--red); color:var(--red); }
+  .log-entry.info { border-color:var(--border); color:var(--text); }
+  .input-field { width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:var(--text-bright); padding:12px; font-family:'Share Tech Mono',monospace; font-size:14px; outline:none; border-radius:4px; margin-bottom:8px; }
+  .input-field:focus { border-color:var(--green); }
+  .input-field::placeholder { color:var(--border); }
+  .alert-banner { display:none; padding:12px; background:var(--red-dim); border:1px solid var(--red); color:var(--red); font-family:'Share Tech Mono',monospace; font-size:13px; text-align:center; margin-bottom:14px; animation:blink 0.5s infinite; }
+  .alert-banner.show { display:block; }
+  .error-box { display:none; padding:12px; background:rgba(255,204,0,0.1); border:1px solid var(--yellow); color:var(--yellow); font-size:13px; margin-top:10px; border-radius:4px; line-height:1.6; white-space:pre-line; }
+  .error-box.show { display:block; }
 </style>
 </head>
 <body>
 <div class="app">
-
   <header>
     <div class="logo">🛡️</div>
     <h1>AI <span>Security</span></h1>
@@ -309,7 +78,6 @@
 
   <div class="alert-banner" id="alertBanner">⚠️ THREAT DETECTED — EMAIL SENT ⚠️</div>
 
-  <!-- EMAIL -->
   <div class="panel">
     <div class="panel-header">📧 Alert Email</div>
     <div class="panel-body">
@@ -317,7 +85,6 @@
     </div>
   </div>
 
-  <!-- CAMERA -->
   <div class="panel">
     <div class="panel-header">📹 Live Camera</div>
     <div class="camera-wrap">
@@ -337,34 +104,17 @@
     </div>
   </div>
 
-  <!-- STATUS -->
   <div class="panel">
     <div class="panel-header">📊 System Status</div>
     <div class="panel-body">
-      <div class="info-row">
-        <span class="info-label">CAMERA</span>
-        <span class="info-value" id="camStatus" style="color:var(--border)">OFFLINE</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">LOCATION</span>
-        <span class="info-value" id="locStatus" style="color:var(--border)">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">AI ENGINE</span>
-        <span class="info-value" id="aiStatus" style="color:var(--border)">STANDBY</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">ALERTS SENT</span>
-        <span class="info-value" id="alertCount" style="color:var(--green)">0</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">LAST ALERT</span>
-        <span class="info-value" id="lastAlert" style="color:var(--border)">—</span>
-      </div>
+      <div class="info-row"><span class="info-label">CAMERA</span><span class="info-value" id="camStatus" style="color:var(--border)">OFFLINE</span></div>
+      <div class="info-row"><span class="info-label">LOCATION</span><span class="info-value" id="locStatus" style="color:var(--border)">—</span></div>
+      <div class="info-row"><span class="info-label">AI ENGINE</span><span class="info-value" id="aiStatus" style="color:var(--border)">STANDBY</span></div>
+      <div class="info-row"><span class="info-label">ALERTS SENT</span><span class="info-value" id="alertCount" style="color:var(--green)">0</span></div>
+      <div class="info-row"><span class="info-label">LAST ALERT</span><span class="info-value" id="lastAlert" style="color:var(--border)">—</span></div>
     </div>
   </div>
 
-  <!-- THREATS -->
   <div class="panel">
     <div class="panel-header">🔍 Threat Detection</div>
     <div class="panel-body">
@@ -379,273 +129,222 @@
     </div>
   </div>
 
-  <!-- LOG -->
   <div class="panel">
     <div class="panel-header">📋 Detection Log</div>
     <div class="panel-body">
       <div class="log-area" id="logArea">
-        <div class="log-entry info">[ System ready ]</div>
+        <div class="log-entry info">[ System ready — Gemini AI loaded ]</div>
       </div>
     </div>
   </div>
-
 </div>
 
 <script>
+const GEMINI_KEY = 'AIzaSyA3y_eoZyyAv2a0XkfTl-wHgWOg_yGi0wE';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY;
 const WEB3FORMS_KEY = 'a00a1df0-99d1-4cdc-852e-cc4a9374bf00';
-let stream = null, monitoring = false, alertCount = 0;
-let lastAlertTime = 0;
-const COOLDOWN = 60000;
-let userLat = null, userLng = null;
-let scanInterval = null;
 
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+let stream=null, monitoring=false, alertCount=0, lastAlertTime=0;
+const COOLDOWN=60000;
+let userLat=null, userLng=null, scanInterval=null;
 
-function log(msg, type='info') {
-  const area = document.getElementById('logArea');
-  const t = new Date().toLocaleTimeString();
-  const d = document.createElement('div');
-  d.className = 'log-entry ' + type;
-  d.textContent = `[${t}] ${msg}`;
+const video=document.getElementById('video');
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+
+function log(msg,type='info'){
+  const area=document.getElementById('logArea');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');
+  d.className='log-entry '+type;
+  d.textContent=`[${t}] ${msg}`;
   area.appendChild(d);
-  area.scrollTop = area.scrollHeight;
+  area.scrollTop=area.scrollHeight;
 }
 
-function showError(msg) {
-  const box = document.getElementById('errorBox');
-  box.textContent = msg;
-  box.classList.add('show');
+function showError(msg){
+  const b=document.getElementById('errorBox');
+  b.textContent=msg; b.classList.add('show');
+}
+function hideError(){ document.getElementById('errorBox').classList.remove('show'); }
+
+function setStatus(s){
+  const p=document.getElementById('statusPill');
+  p.className='status-pill '+s;
+  p.textContent=s==='idle'?'IDLE':s==='scanning'?'SCANNING':'⚠ ALERT';
 }
 
-function hideError() {
-  document.getElementById('errorBox').classList.remove('show');
-}
-
-function setStatus(s) {
-  const pill = document.getElementById('statusPill');
-  pill.className = 'status-pill ' + s;
-  pill.textContent = s === 'idle' ? 'IDLE' : s === 'scanning' ? 'SCANNING' : '⚠ ALERT';
-}
-
-async function startSystem() {
-  const email = document.getElementById('alertEmail').value.trim();
-  if (!email || !email.includes('@')) {
-    showError('⚠️ Pehle sahi Gmail address daalo!');
-    return;
-  }
+async function startSystem(){
+  const email=document.getElementById('alertEmail').value.trim();
+  if(!email||!email.includes('@')){ showError('⚠️ Pehle sahi Gmail daalo!'); return; }
   hideError();
+  log('Camera start ho raha hai...','info');
 
-  log('Camera start ho raha hai...', 'info');
-
-  // Try environment camera first (back camera), then any
-  const constraints = [
-    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
-    { video: { facingMode: 'environment' }, audio: false },
-    { video: true, audio: false }
-  ];
-
-  let started = false;
-  for (let c of constraints) {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(c);
-      started = true;
-      break;
-    } catch(e) {
-      log('Trying next camera mode...', 'warn');
-    }
+  let started=false;
+  for(let c of [{video:{facingMode:{ideal:'environment'}},audio:false},{video:true,audio:false}]){
+    try{ stream=await navigator.mediaDevices.getUserMedia(c); started=true; break; }
+    catch(e){ continue; }
   }
 
-  if (!started) {
-    showError('❌ Camera allow nahi hua!\n\nPhone Settings → Apps → Chrome → Permissions → Camera → Allow karo, phir try karo.');
-    log('Camera permission denied!', 'danger');
-    return;
+  if(!started){
+    showError('❌ Camera allow nahi hua!\nPhone Settings → Apps → Chrome → Permissions → Camera → Allow karo');
+    log('Camera denied!','danger'); return;
   }
 
-  video.srcObject = stream;
-  await new Promise(r => video.onloadedmetadata = r);
+  video.srcObject=stream;
+  await new Promise(r=>{ video.onloadedmetadata=r; });
   video.play();
 
-  document.getElementById('camPlaceholder').style.display = 'none';
-  document.getElementById('camStatus').textContent = 'ONLINE ✓';
-  document.getElementById('camStatus').style.color = 'var(--green)';
-  document.getElementById('startBtn').style.display = 'none';
-  document.getElementById('stopBtn').style.display = 'block';
+  document.getElementById('camPlaceholder').style.display='none';
+  document.getElementById('camStatus').textContent='ONLINE ✓';
+  document.getElementById('camStatus').style.color='var(--green)';
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('stopBtn').style.display='block';
   document.getElementById('scanLine').classList.add('active');
+  setStatus('scanning'); monitoring=true;
 
-  setStatus('scanning');
-  monitoring = true;
+  log('Camera ON ✓','ok');
+  log('Gemini AI active — har 15 sec mein scan','ok');
 
-  log('Camera ON ✓', 'ok');
-  log('Location fetch ho raha hai...', 'info');
-
-  // Get location
-  if (navigator.geolocation) {
+  if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        userLat = pos.coords.latitude.toFixed(6);
-        userLng = pos.coords.longitude.toFixed(6);
-        document.getElementById('locStatus').textContent = `${userLat}, ${userLng}`;
-        document.getElementById('locStatus').style.color = 'var(--green)';
-        log(`Location: ${userLat}, ${userLng}`, 'ok');
+      pos=>{
+        userLat=pos.coords.latitude.toFixed(6);
+        userLng=pos.coords.longitude.toFixed(6);
+        document.getElementById('locStatus').textContent=userLat+', '+userLng;
+        document.getElementById('locStatus').style.color='var(--green)';
+        log('Location: '+userLat+', '+userLng,'ok');
       },
-      () => {
-        document.getElementById('locStatus').textContent = 'Unavailable';
-        document.getElementById('locStatus').style.color = 'var(--yellow)';
-        log('Location unavailable', 'warn');
-      }
+      ()=>{ document.getElementById('locStatus').textContent='Unavailable'; }
     );
   }
 
-  document.getElementById('aiStatus').textContent = 'ACTIVE';
-  document.getElementById('aiStatus').style.color = 'var(--green)';
-  log('AI monitoring shuru — har 15 sec mein scan hoga', 'ok');
-
-  // First scan after 4s, then every 15s
-  setTimeout(analyzeFrame, 4000);
-  scanInterval = setInterval(analyzeFrame, 15000);
+  document.getElementById('aiStatus').textContent='GEMINI ACTIVE';
+  document.getElementById('aiStatus').style.color='var(--green)';
+  setTimeout(analyzeFrame,3000);
+  scanInterval=setInterval(analyzeFrame,15000);
 }
 
-function stopSystem() {
-  monitoring = false;
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
-  video.srcObject = null;
-  document.getElementById('camPlaceholder').style.display = 'flex';
-  document.getElementById('camStatus').textContent = 'OFFLINE';
-  document.getElementById('camStatus').style.color = 'var(--border)';
-  document.getElementById('aiStatus').textContent = 'STANDBY';
-  document.getElementById('aiStatus').style.color = 'var(--border)';
-  document.getElementById('startBtn').style.display = 'block';
-  document.getElementById('stopBtn').style.display = 'none';
+function stopSystem(){
+  monitoring=false;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if(scanInterval){ clearInterval(scanInterval); scanInterval=null; }
+  video.srcObject=null;
+  document.getElementById('camPlaceholder').style.display='flex';
+  document.getElementById('camStatus').textContent='OFFLINE';
+  document.getElementById('camStatus').style.color='var(--border)';
+  document.getElementById('aiStatus').textContent='STANDBY';
+  document.getElementById('aiStatus').style.color='var(--border)';
+  document.getElementById('startBtn').style.display='block';
+  document.getElementById('stopBtn').style.display='none';
   document.getElementById('scanLine').classList.remove('active');
-  setStatus('idle');
-  resetThreats();
-  log('System band kiya gaya', 'warn');
+  setStatus('idle'); resetThreats();
+  log('System band kiya gaya','warn');
 }
 
-function captureFrame() {
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-  ctx.drawImage(video, 0, 0);
-  return canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+function captureFrame(){
+  canvas.width=video.videoWidth||640;
+  canvas.height=video.videoHeight||480;
+  ctx.drawImage(video,0,0);
+  return canvas.toDataURL('image/jpeg',0.6).split(',')[1];
 }
 
-async function analyzeFrame() {
-  if (!monitoring) return;
-  log('Frame analyze ho raha hai...', 'info');
-  document.getElementById('aiStatus').textContent = 'ANALYZING...';
-  document.getElementById('aiStatus').style.color = 'var(--yellow)';
+async function analyzeFrame(){
+  if(!monitoring) return;
+  log('Scanning...','info');
+  document.getElementById('aiStatus').textContent='ANALYZING...';
+  document.getElementById('aiStatus').style.color='var(--yellow)';
 
   let base64;
-  try { base64 = captureFrame(); }
-  catch(e) { log('Frame capture error', 'warn'); return; }
+  try{ base64=captureFrame(); }
+  catch(e){ log('Frame error','warn'); return; }
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
-            { type: 'text', text: `Security camera analysis. Check for: face mask/covering, weapons (knife/gun), avoiding camera. Reply ONLY in JSON:
-{"suspicious":true/false,"threats":{"face_mask":true/false,"face_covered":true/false,"weapon":true/false,"avoiding_camera":true/false,"knife":true/false,"gun":true/false},"description":"brief description","confidence":"high/medium/low"}` }
-          ]
-        }]
+  try{
+    const res=await fetch(GEMINI_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[
+          {inline_data:{mime_type:'image/jpeg',data:base64}},
+          {text:'You are a security camera AI. Analyze this image for threats: face mask, face covered, weapons (knife/gun), avoiding camera. Reply ONLY with JSON (no markdown): {"suspicious":false,"threats":{"face_mask":false,"face_covered":false,"weapon":false,"avoiding_camera":false,"knife":false,"gun":false},"description":"what you see","confidence":"high"}'}
+        ]}],
+        generationConfig:{temperature:0.1,maxOutputTokens:200}
       })
     });
 
-    const data = await res.json();
-    const text = data.content.map(i => i.text||'').join('').replace(/```json|```/g,'').trim();
-    const result = JSON.parse(text);
+    const data=await res.json();
+    if(data.error){ log('API error: '+data.error.message,'warn'); document.getElementById('aiStatus').textContent='GEMINI ACTIVE'; document.getElementById('aiStatus').style.color='var(--green)'; return; }
 
-    document.getElementById('aiStatus').textContent = 'ACTIVE';
-    document.getElementById('aiStatus').style.color = 'var(--green)';
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
 
-    updateThreats(result.threats);
+    let result;
+    try{ result=JSON.parse(clean); }
+    catch(e){ log('Parse error','warn'); document.getElementById('aiStatus').textContent='GEMINI ACTIVE'; document.getElementById('aiStatus').style.color='var(--green)'; return; }
 
-    if (result.suspicious && result.confidence !== 'low') {
-      log('⚠️ THREAT: ' + result.description, 'danger');
+    document.getElementById('aiStatus').textContent='GEMINI ACTIVE';
+    document.getElementById('aiStatus').style.color='var(--green)';
+    updateThreats(result.threats||{});
+
+    if(result.suspicious && result.confidence!=='low'){
+      log('⚠️ THREAT: '+result.description,'danger');
       triggerAlert(result);
     } else {
-      log('✓ Clear — ' + (result.description || 'No threat'), 'ok');
+      log('✓ Clear — '+(result.description||'No threat'),'ok');
       resetThreats();
     }
-
-  } catch(e) {
-    document.getElementById('aiStatus').textContent = 'ACTIVE';
-    document.getElementById('aiStatus').style.color = 'var(--green)';
-    log('Analysis error: ' + e.message, 'warn');
+  } catch(e){
+    document.getElementById('aiStatus').textContent='GEMINI ACTIVE';
+    document.getElementById('aiStatus').style.color='var(--green)';
+    log('Error: '+e.message,'warn');
   }
 }
 
-function updateThreats(t) {
-  const map = { face_mask:'t-mask', face_covered:'t-cover', weapon:'t-weapon', avoiding_camera:'t-avoid', knife:'t-knife', gun:'t-gun' };
-  Object.entries(map).forEach(([k,id]) => {
-    document.getElementById(id).classList.toggle('detected', !!t[k]);
-  });
+function updateThreats(t){
+  const map={face_mask:'t-mask',face_covered:'t-cover',weapon:'t-weapon',avoiding_camera:'t-avoid',knife:'t-knife',gun:'t-gun'};
+  Object.entries(map).forEach(([k,id])=>{ document.getElementById(id).classList.toggle('detected',!!t[k]); });
 }
 
-function resetThreats() {
-  ['t-mask','t-cover','t-weapon','t-avoid','t-knife','t-gun'].forEach(id =>
-    document.getElementById(id).classList.remove('detected')
-  );
+function resetThreats(){
+  ['t-mask','t-cover','t-weapon','t-avoid','t-knife','t-gun'].forEach(id=>document.getElementById(id).classList.remove('detected'));
 }
 
-async function triggerAlert(result) {
-  const now = Date.now();
-  if (now - lastAlertTime < COOLDOWN) { log('Cooldown active', 'warn'); return; }
-  lastAlertTime = now;
+async function triggerAlert(result){
+  const now=Date.now();
+  if(now-lastAlertTime<COOLDOWN){ log('Cooldown active','warn'); return; }
+  lastAlertTime=now;
 
   document.getElementById('alertFlash').classList.add('active');
-  setTimeout(() => document.getElementById('alertFlash').classList.remove('active'), 1600);
+  setTimeout(()=>document.getElementById('alertFlash').classList.remove('active'),1600);
   document.getElementById('alertBanner').classList.add('show');
-  setTimeout(() => document.getElementById('alertBanner').classList.remove('show'), 5000);
+  setTimeout(()=>document.getElementById('alertBanner').classList.remove('show'),5000);
   setStatus('alert');
-  setTimeout(() => setStatus('scanning'), 5000);
+  setTimeout(()=>setStatus('scanning'),5000);
 
-  const email = document.getElementById('alertEmail').value.trim();
-  const time = new Date().toLocaleString('en-IN');
-  const locText = userLat ? `${userLat}, ${userLng}` : 'Unavailable';
-  const mapsLink = userLat ? `https://maps.google.com/?q=${userLat},${userLng}` : 'N/A';
-  const detected = Object.entries(result.threats).filter(([,v])=>v).map(([k])=>k.replace(/_/g,' ').toUpperCase()).join(', ') || 'Suspicious behavior';
+  const email=document.getElementById('alertEmail').value.trim();
+  const time=new Date().toLocaleString('en-IN');
+  const locText=userLat?userLat+', '+userLng:'Unavailable';
+  const mapsLink=userLat?'https://maps.google.com/?q='+userLat+','+userLng:'N/A';
+  const detected=Object.entries(result.threats||{}).filter(([,v])=>v).map(([k])=>k.replace(/_/g,' ').toUpperCase()).join(', ')||'Suspicious behavior';
 
-  try {
-    const fd = new FormData();
-    fd.append('access_key', WEB3FORMS_KEY);
-    fd.append('to', email);
-    fd.append('subject', '🚨 SECURITY ALERT — Suspicious Activity!');
-    fd.append('message',
-      `⚠️ SECURITY ALERT ⚠️\n\n` +
-      `Time: ${time}\n` +
-      `Location: ${locText}\n` +
-      `Google Maps: ${mapsLink}\n\n` +
-      `Threats: ${detected}\n` +
-      `Details: ${result.description}\n` +
-      `Confidence: ${result.confidence}\n\n` +
-      `— AI Security System`
-    );
+  try{
+    const fd=new FormData();
+    fd.append('access_key',WEB3FORMS_KEY);
+    fd.append('to',email);
+    fd.append('subject','🚨 SECURITY ALERT — Suspicious Activity!');
+    fd.append('message','⚠️ SECURITY ALERT ⚠️\n\nTime: '+time+'\nLocation: '+locText+'\nGoogle Maps: '+mapsLink+'\n\nThreats: '+detected+'\nDetails: '+result.description+'\nConfidence: '+result.confidence+'\n\n— AI Security System');
 
-    const r = await fetch('https://api.web3forms.com/submit', { method:'POST', body: fd });
-    const d = await r.json();
+    const r=await fetch('https://api.web3forms.com/submit',{method:'POST',body:fd});
+    const d=await r.json();
 
-    if (d.success) {
+    if(d.success){
       alertCount++;
-      document.getElementById('alertCount').textContent = alertCount;
-      document.getElementById('lastAlert').textContent = new Date().toLocaleTimeString();
-      document.getElementById('lastAlert').style.color = 'var(--red)';
-      log('📧 Email sent: ' + email, 'ok');
-    } else {
-      log('Email failed: ' + d.message, 'danger');
-    }
-  } catch(e) {
-    log('Email error: ' + e.message, 'danger');
-  }
+      document.getElementById('alertCount').textContent=alertCount;
+      document.getElementById('lastAlert').textContent=new Date().toLocaleTimeString();
+      document.getElementById('lastAlert').style.color='var(--red)';
+      log('📧 Email sent! '+email,'ok');
+    } else { log('Email failed: '+d.message,'danger'); }
+  } catch(e){ log('Email error: '+e.message,'danger'); }
 }
 </script>
 </body>
