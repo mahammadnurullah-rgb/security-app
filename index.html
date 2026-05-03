@@ -141,6 +141,247 @@
 
 <script>
 const GEMINI_KEY = 'AIzaSyA3y_eoZyyAv2a0XkfTl-wHgWOg_yGi0wE';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+const WEB3FORMS_KEY = 'a00a1df0-99d1-4cdc-852e-cc4a9374bf00';
+
+let stream=null, monitoring=false, alertCount=0, lastAlertTime=0;
+const COOLDOWN=60000;
+let userLat=null, userLng=null, scanInterval=null;
+
+const video=document.getElementById('video');
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+
+function log(msg,type='info'){
+  const area=document.getElementById('logArea');
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement('div');
+  d.className='log-entry '+type;
+  d.textContent=`[${t}] ${msg}`;
+  area.appendChild(d);
+  area.scrollTop=area.scrollHeight;
+}
+
+function showError(msg){
+  const b=document.getElementById('errorBox');
+  b.textContent=msg; b.classList.add('show');
+}
+function hideError(){ document.getElementById('errorBox').classList.remove('show'); }
+
+function setStatus(s){
+  const p=document.getElementById('statusPill');
+  p.className='status-pill '+s;
+  p.textContent=s==='idle'?'IDLE':s==='scanning'?'SCANNING':'⚠ ALERT';
+}
+
+async function startSystem(){
+  const email=document.getElementById('alertEmail').value.trim();
+  if(!email||!email.includes('@')){ showError('⚠️ Pehle sahi Gmail daalo!'); return; }
+  hideError();
+  log('Camera start ho raha hai...','info');
+
+  let started=false;
+  for(let c of [{video:{facingMode:{ideal:'environment'}},audio:false},{video:true,audio:false}]){
+    try{ stream=await navigator.mediaDevices.getUserMedia(c); started=true; break; }
+    catch(e){ continue; }
+  }
+
+  if(!started){
+    showError('❌ Camera allow nahi hua!\nPhone Settings → Apps → Chrome → Permissions → Camera → Allow karo');
+    log('Camera denied!','danger'); return;
+  }
+
+  video.srcObject=stream;
+  await new Promise(r=>{ video.onloadedmetadata=r; });
+  video.play();
+
+  document.getElementById('camPlaceholder').style.display='none';
+  document.getElementById('camStatus').textContent='ONLINE ✓';
+  document.getElementById('camStatus').style.color='var(--green)';
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('stopBtn').style.display='block';
+  document.getElementById('scanLine').classList.add('active');
+  setStatus('scanning'); monitoring=true;
+
+  log('Camera ON ✓','ok');
+  log('Gemini AI active — har 15 sec mein scan','ok');
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        userLat=pos.coords.latitude.toFixed(6);
+        userLng=pos.coords.longitude.toFixed(6);
+        document.getElementById('locStatus').textContent=userLat+', '+userLng;
+        document.getElementById('locStatus').style.color='var(--green)';
+        log('Location: '+userLat+', '+userLng,'ok');
+      },
+      ()=>{ document.getElementById('locStatus').textContent='Unavailable'; }
+    );
+  }
+
+  document.getElementById('aiStatus').textContent='GEMINI ACTIVE';
+  document.getElementById('aiStatus').style.color='var(--green)';
+  setTimeout(analyzeFrame,3000);
+  scanInterval=setInterval(analyzeFrame,15000);
+}
+
+function stopSystem(){
+  monitoring=false;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if(scanInterval){ clearInterval(scanInterval); scanInterval=null; }
+  video.srcObject=null;
+  document.getElementById('camPlaceholder').style.display='flex';
+  document.getElementById('camStatus').textContent='OFFLINE';
+  document.getElementById('camStatus').style.color='var(--border)';
+  document.getElementById('aiStatus').textContent='STANDBY';
+  document.getElementById('aiStatus').style.color='var(--border)';
+  document.getElementById('startBtn').style.display='block';
+  document.getElementById('stopBtn').style.display='none';
+  document.getElementById('scanLine').classList.remove('active');
+  setStatus('idle'); resetThreats();
+  log('System band kiya gaya','warn');
+}
+
+function captureFrame(){
+  canvas.width=video.videoWidth||640;
+  canvas.height=video.videoHeight||480;
+  ctx.drawImage(video,0,0);
+  return canvas.toDataURL('image/jpeg',0.6).split(',')[1];
+}
+
+async function analyzeFrame(){
+  if(!monitoring) return;
+  log('Scanning...','info');
+  document.getElementById('aiStatus').textContent='ANALYZING...';
+  document.getElementById('aiStatus').style.color='var(--yellow)';
+
+  let base64;
+  try{ base64=captureFrame(); }
+  catch(e){ log('Frame error','warn'); return; }
+
+  try{
+    const res=await fetch(GEMINI_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[
+          {inline_data:{mime_type:'image/jpeg',data:base64}},
+          {text:'You are a security camera AI. Analyze this image for threats: face mask, face covered, weapons (knife/gun), avoiding camera. Reply ONLY with JSON (no markdown): {"suspicious":false,"threats":{"face_mask":false,"face_covered":false,"weapon":false,"avoiding_camera":false,"knife":false,"gun":false},"description":"what you see","confidence":"high"}'}
+        ]}],
+        generationConfig:{temperature:0.1,maxOutputTokens:200}
+      })
+    });
+
+    const data=await res.json();
+    if(data.error){ log('API error: '+data.error.message,'warn'); document.getElementById('aiStatus').textContent='GEMINI ACTIVE'; document.getElementById('aiStatus').style.color='var(--green)'; return; }
+
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
+
+    let result;
+    try{ result=JSON.parse(clean); }
+    catch(e){ log('Parse error','warn'); document.getElementById('aiStatus').textContent='GEMINI ACTIVE'; document.getElementById('aiStatus').style.color='var(--green)'; return; }
+
+    document.getElementById('aiStatus').textContent='GEMINI ACTIVE';
+    document.getElementById('aiStatus').style.color='var(--green)';
+    updateThreats(result.threats||{});
+
+    if(result.suspicious && result.confidence!=='low'){
+      log('⚠️ THREAT: '+result.description,'danger');
+      triggerAlert(result);
+    } else {
+      log('✓ Clear — '+(result.description||'No threat'),'ok');
+      resetThreats();
+    }
+  } catch(e){
+    document.getElementById('aiStatus').textContent='GEMINI ACTIVE';
+    document.getElementById('aiStatus').style.color='var(--green)';
+    log('Error: '+e.message,'warn');
+  }
+}
+
+function updateThreats(t){
+  const map={face_mask:'t-mask',face_covered:'t-cover',weapon:'t-weapon',avoiding_camera:'t-avoid',knife:'t-knife',gun:'t-gun'};
+  Object.entries(map).forEach(([k,id])=>{ document.getElementById(id).classList.toggle('detected',!!t[k]); });
+}
+
+function resetThreats(){
+  ['t-mask','t-cover','t-weapon','t-avoid','t-knife','t-gun'].forEach(id=>document.getElementById(id).classList.remove('detected'));
+}
+
+async function triggerAlert(result){
+  const now=Date.now();
+  if(now-lastAlertTime<COOLDOWN){ log('Cooldown active','warn'); return; }
+  lastAlertTime=now;
+
+  document.getElementById('alertFlash').classList.add('active');
+  setTimeout(()=>document.getElementById('alertFlash').classList.remove('active'),1600);
+  document.getElementById('alertBanner').classList.add('show');
+  setTimeout(()=>document.getElementById('alertBanner').classList.remove('show'),5000);
+  setStatus('alert');
+  setTimeout(()=>setStatus('scanning'),5000);
+
+  const email=document.getElementById('alertEmail').value.trim();
+  const time=new Date().toLocaleString('en-IN');
+  const locText=userLat?userLat+', '+userLng:'Unavailable';
+  const mapsLink=userLat?'https://maps.google.com/?q='+userLat+','+userLng:'N/A';
+  const detected=Object.entries(result.threats||{}).filter(([,v])=>v).map(([k])=>k.replace(/_/g,' ').toUpperCase()).join(', ')||'Suspicious behavior';
+
+  try{
+    const fd=new FormData();
+    fd.append('access_key',WEB3FORMS_KEY);
+    fd.append('to',email);
+    fd.append('subject','🚨 SECURITY ALERT — Suspicious Activity!');
+    fd.append('message','⚠️ SECURITY ALERT ⚠️\n\nTime: '+time+'\nLocation: '+locText+'\nGoogle Maps: '+mapsLink+'\n\nThreats: '+detected+'\nDetails: '+result.description+'\nConfidence: '+result.confidence+'\n\n— AI Security System');
+
+    const r=await fetch('https://api.web3forms.com/submit',{method:'POST',body:fd});
+    const d=await r.json();
+
+    if(d.success){
+      alertCount++;
+      document.getElementById('alertCount').textContent=alertCount;
+      document.getElementById('lastAlert').textContent=new Date().toLocaleTimeString();
+      document.getElementById('lastAlert').style.color='var(--red)';
+      log('📧 Email sent! '+email,'ok');
+    } else { log('Email failed: '+d.message,'danger'); }
+  } catch(e){ log('Email error: '+e.message,'danger'); }
+}
+</script>
+</body>
+</html>      <div class="info-row"><span class="info-label">CAMERA</span><span class="info-value" id="camStatus" style="color:var(--border)">OFFLINE</span></div>
+      <div class="info-row"><span class="info-label">LOCATION</span><span class="info-value" id="locStatus" style="color:var(--border)">—</span></div>
+      <div class="info-row"><span class="info-label">AI ENGINE</span><span class="info-value" id="aiStatus" style="color:var(--border)">STANDBY</span></div>
+      <div class="info-row"><span class="info-label">ALERTS SENT</span><span class="info-value" id="alertCount" style="color:var(--green)">0</span></div>
+      <div class="info-row"><span class="info-label">LAST ALERT</span><span class="info-value" id="lastAlert" style="color:var(--border)">—</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">🔍 Threat Detection</div>
+    <div class="panel-body">
+      <div class="threats">
+        <div class="threat-item" id="t-mask"><div class="threat-dot"></div>Face Mask</div>
+        <div class="threat-item" id="t-cover"><div class="threat-dot"></div>Face Covered</div>
+        <div class="threat-item" id="t-weapon"><div class="threat-dot"></div>Weapon</div>
+        <div class="threat-item" id="t-avoid"><div class="threat-dot"></div>Avoiding Cam</div>
+        <div class="threat-item" id="t-knife"><div class="threat-dot"></div>Knife/Sharp</div>
+        <div class="threat-item" id="t-gun"><div class="threat-dot"></div>Gun/Firearm</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📋 Detection Log</div>
+    <div class="panel-body">
+      <div class="log-area" id="logArea">
+        <div class="log-entry info">[ System ready — Gemini AI loaded ]</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GEMINI_KEY = 'AIzaSyA3y_eoZyyAv2a0XkfTl-wHgWOg_yGi0wE';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY;
 const WEB3FORMS_KEY = 'a00a1df0-99d1-4cdc-852e-cc4a9374bf00';
 
